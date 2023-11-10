@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { LapTopResponse } from "../api";
 
 type LapTopProps = {
@@ -5,13 +6,58 @@ type LapTopProps = {
 };
 
 export const LapTop = ({ data }: LapTopProps) => {
+  const [buttonIndex, setButtonIndex] = useState<null | number>(null);
+  const [sortedData, setSortedData] = useState<LapTopResponse[]>(data);
+  const [sortAscending, setSortAscending] = useState(true);
+  const [filterText, setFilterText] = useState('');
+
+  const showHandler = (index: number) => {
+    setButtonIndex(index === buttonIndex ? null : index);
+  };
+
+  const sortHandler = () => {
+    const newData = [...data];
+    newData.sort((a, b) => (sortAscending ? a.weight - b.weight : b.weight - a.weight));
+    return newData;
+  };
+
+  const filterLaptops = () => {
+    return data.filter((laptop) =>
+      laptop.name.toLowerCase().includes(filterText.toLowerCase())
+    );
+  };
+
+  useEffect(() => {
+    const newSortedData = sortHandler();
+    setSortedData(newSortedData);
+  }, [data, sortAscending]);
+
+  useEffect(() => {
+    const filteredData = filterLaptops();
+    setSortedData(filteredData);
+  }, [filterText, data]);
+
   return (
     <>
-      {data.map((laptop, index) => (
-        <li key={index}>
-          <h1>{laptop.brand}</h1>
+      <input
+        type="text"
+        placeholder="Filter by name..."
+        value={filterText}
+        onChange={(e) => setFilterText(e.target.value)}
+      />
+      <button onClick={() => setSortAscending(!sortAscending)}>Sort</button>
+      {sortedData.map((laptop, index) => (
+        <li key={index} style={{ listStyle: "none" }}>
           <h2>{laptop.name}</h2>
-          <h3>{laptop.weight}</h3>
+          {buttonIndex === index && (
+            <div>
+              <p>Brand: {laptop.brand}</p>
+              <p>Weight: {laptop.weight}</p>
+            </div>
+          )}
+          <button onClick={() => showHandler(index)}>
+            {buttonIndex === index ? "Show Less" : "Show More"}
+          </button>
         </li>
       ))}
     </>
